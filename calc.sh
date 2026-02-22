@@ -14,10 +14,11 @@ usage() {
     echo "  -s <name>  Open/Create a named session"
     echo "  -l         List all sessions"
     echo "  -d <name>  Delete a session"
+    echo "  -s <name> -r <new> Rename a session"
     exit 0
 }
 
-while getopts "s:ld:" opt; do
+while getopts "s:ld:r:" opt; do
     case $opt in
         s) SESSION_NAME="$OPTARG" ;;
         l) 
@@ -42,6 +43,25 @@ while getopts "s:ld:" opt; do
                 rm -rf "$SESSIONS_DIR/$OPTARG"
                 echo "Deleted."
             fi
+            exit 0
+            ;;
+        r)
+            NEW_NAME="$OPTARG"
+            if [ ! -d "$SESSIONS_DIR/$SESSION_NAME" ]; then
+                echo "Session '$SESSION_NAME' does not exist."
+                exit 1
+            fi
+            if [ -d "$SESSIONS_DIR/$NEW_NAME" ]; then
+                read -p "Session '$NEW_NAME' already exists. Overwrite? [y/N] " confirm
+                if [[ $confirm == [yY] ]]; then
+                    rm -rf "$SESSIONS_DIR/$NEW_NAME"
+                else
+                    echo "Aborted."
+                    exit 0
+                fi
+            fi
+            mv "$SESSIONS_DIR/$SESSION_NAME" "$SESSIONS_DIR/$NEW_NAME"
+            echo "Renamed '$SESSION_NAME' to '$NEW_NAME'."
             exit 0
             ;;
         *) usage ;;
@@ -74,6 +94,4 @@ export PYTHONSTARTUP="$STARTUP_FILE"
 # -a: append
 # -q: quiet
 # -c: command to run
-# Note: On macOS (BSD), the syntax for 'script' is slightly different. 
-# This version works on Linux/Termux (util-linux).
 script -a -q -c "python3 -q -i" "$TYPESCRIPT"
